@@ -2,7 +2,7 @@
 
 Ask questions in plain English and get answers from your own documents, with the source shown.
 
-**Demo video:** [Watch the walkthrough](PASTE_LOOM_LINK_HERE)
+**Demo video:** [Watch the demo](https://www.loom.com/share/452f32d9bc624cc69ad7cadb6168cbf9)
 
 ![Chat Assistant workflow](docs/chat-assistant-canvas.png)
 
