@@ -1,0 +1,266 @@
+{
+  "name": "AI Knowledge Chatbot: Chat Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c0ef6e85-4e53-414c-adeb-3f3739a7e507",
+      "name": "Customer question",
+      "webhookId": "3d83dfbc-d8d6-45e3-bfb7-9c8edbf536a6"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "prompt": "={{ $json.chatInput }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e27abbbb-6789-45e8-95a4-83250383d373",
+      "name": "Find relevant passages",
+      "credentials": {
+        "supabaseApi": {
+          "id": "LHO3LSse3DFBOpwy",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        512,
+        0
+      ],
+      "id": "025cb072-7ab4-482c-b666-5278d6d3bf48",
+      "name": "Combine passages"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        128
+      ],
+      "id": "912d720c-e317-42a5-b108-13481f3f9e12",
+      "name": "Embed the question",
+      "credentials": {
+        "openAiApi": {
+          "id": "zfmUKBDqaZHPwST1",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        176
+      ],
+      "id": "5f1f5417-a1da-41da-b13f-706b74f4f200",
+      "name": "Language model",
+      "credentials": {
+        "openAiApi": {
+          "id": "zfmUKBDqaZHPwST1",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Customer question').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        864,
+        176
+      ],
+      "id": "7563c2b2-aa6a-471c-ab88-4b125ff5c509",
+      "name": "Conversation memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Customer question').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=Answer the question using only the context below. Include any conditions or exceptions that the context states, and do not add any that it doesn't state. If the answer isn't in the context, reply with only the words: I don't know. Otherwise, finish your answer with a new line that starts with \"Sources:\" followed by the line ranges, taken from the labels in the context, of the passages you actually used. If you reply \"I don't know\", do not write a Sources line at all.\n\nContext:\n{{ $json.data.map(item => `[Source: lines ${item.document.metadata.loc.lines.from}-${item.document.metadata.loc.lines.to}]\\n${item.document.pageContent}`).join(\"\\n\\n\") }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        752,
+        0
+      ],
+      "id": "c0a4ed3a-3c05-45e0-9a69-b23df938cf04",
+      "name": "Answer from passages"
+    },
+    {
+      "parameters": {
+        "content": "## 1. A customer asks a question",
+        "height": 224,
+        "width": 224,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -64
+      ],
+      "id": "a0e82c7c-0192-4918-aa0a-fc943c3a0c36",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Find the most relevant pieces of the documents",
+        "height": 320,
+        "width": 464,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -64
+      ],
+      "id": "6305fe4b-4fbc-4580-93ad-464823e0e27e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 3. Write an answer using only those pieces, and remember the conversation",
+        "height": 384,
+        "width": 368,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -64
+      ],
+      "id": "906920a4-4525-42db-861e-9e0920144166",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Customer question": {
+      "main": [
+        [
+          {
+            "node": "Find relevant passages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find relevant passages": {
+      "main": [
+        [
+          {
+            "node": "Combine passages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine passages": {
+      "main": [
+        [
+          {
+            "node": "Answer from passages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed the question": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Find relevant passages",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Language model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer from passages",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Answer from passages",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b1cd3153-b1ae-40b4-876e-f999f60a875f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21610be9a4b3cba3604d42406e08217183f0bf9b2b7e460efbc4b30d7529f65b"
+  },
+  "nodeGroups": [],
+  "id": "mihDFAzVxrGGg61f",
+  "tags": []
+}

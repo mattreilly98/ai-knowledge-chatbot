@@ -1,0 +1,260 @@
+{
+  "name": "AI Knowledge Chatbot: Document Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "YOUR_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "drive Workflow A",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_FOLDER_ID"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "169541b6-089a-4b8b-b5f3-730536afe47d",
+      "name": "New file added to Drive folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "qjNbzu7bAHZNA4kf",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        128,
+        0
+      ],
+      "id": "fe7b1033-b5b8-480b-b73a-5865c0976e38",
+      "name": "Download the file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "qjNbzu7bAHZNA4kf",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        368,
+        224
+      ],
+      "id": "756bccac-e392-4524-95d8-352716563046",
+      "name": "Read file contents"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        480,
+        336
+      ],
+      "id": "88e9a3d2-2f48-4642-916a-2609e67e8c43",
+      "name": "Split into chunks"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        128
+      ],
+      "id": "aa90a326-ad86-48b8-905b-095151dbef88",
+      "name": "Convert chunks to embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "zfmUKBDqaZHPwST1",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        0
+      ],
+      "id": "a1ae1236-6c59-4fe7-84f3-d67b3ee4eba0",
+      "name": "Save to knowledge base",
+      "credentials": {
+        "supabaseApi": {
+          "id": "LHO3LSse3DFBOpwy",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 1. Detect and download a new file",
+        "height": 224,
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -48
+      ],
+      "id": "6bfa6acd-b3dc-4627-bb9f-631268c8a15c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Read the file and split it into small pieces",
+        "height": 368,
+        "width": 352,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        288,
+        112
+      ],
+      "id": "19a3181f-277c-4f92-b1dc-a52e73cf899f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 3. Convert the text to numbers and save it in the knowledge base",
+        "height": 368,
+        "width": 448,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -80
+      ],
+      "id": "6c4b41b8-9ad6-4a85-bcfe-b3ba9361a6fe",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New file added to Drive folder": {
+      "main": [
+        [
+          {
+            "node": "Download the file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download the file": {
+      "main": [
+        [
+          {
+            "node": "Save to knowledge base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read file contents": {
+      "ai_document": [
+        [
+          {
+            "node": "Save to knowledge base",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into chunks": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Read file contents",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert chunks to embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Save to knowledge base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f9b48326-0f96-470e-8e78-2871110d5437",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21610be9a4b3cba3604d42406e08217183f0bf9b2b7e460efbc4b30d7529f65b"
+  },
+  "nodeGroups": [],
+  "id": "TFVkxr8teywNvx6t",
+  "tags": []
+}
